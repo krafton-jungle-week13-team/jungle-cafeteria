@@ -8,7 +8,7 @@
 # tiny 위치가 다르면: TINY=/경로/tiny bash run.sh
 
 ROOT="$(cd "$(dirname "$0")" && pwd)"
-TINY="${TINY:-$ROOT/../w13-mini-web-server-team/tiny/tiny}"
+TINY="${TINY:-$ROOT/../mini-web-server/tiny/tiny}"
 
 if [ ! -x "$TINY" ]; then
     echo "tiny를 찾을 수 없어요: $TINY" >&2
