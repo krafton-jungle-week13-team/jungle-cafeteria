@@ -15,7 +15,7 @@ from datetime import datetime
 from pathlib import Path
 from urllib.parse import parse_qs
 
-# 데이터는 웹 루트(web/) 밖에 저장: w13-jungle-cafeteria/data/talk.txt
+# 데이터는 웹 루트(web/) 밖에 저장: jungle-cafeteria/data/talk.txt
 DATA = Path(__file__).resolve().parents[2] / "data" / "talk.txt"
 MEALS = {"lunch": "점심", "dinner": "저녁"}
 DAYS = "월화수목금토일"          # datetime.weekday(): 월=0 … 일=6
@@ -54,10 +54,6 @@ def save(form):
         return "한마디를 입력해 주세요."
 
     now = datetime.now()
-    entry = {"date": now.strftime("%Y-%m-%d"),     # 서버의 실제 날짜
-         "time": now.strftime("%H:%M"),
-         "name": name, "meal": meal, "text": text}
-    
     # 브라우저가 보낸 값은 믿지 않고 형식을 검사한다. 이상하면 서버의 실제 날짜를 쓴다
     if not re.fullmatch(r"\d{4}-\d{2}-\d{2}", date):
         date = now.strftime("%Y-%m-%d")
