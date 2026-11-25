@@ -1,0 +1,8 @@
+#!/usr/bin/env python3
+import os, time
+from urllib.parse import parse_qs
+sec = min(int(parse_qs(os.environ.get("QUERY_STRING", "")).get("sec", ["5"])[0] or 5), 30)
+start = time.strftime("%H:%M:%S"); time.sleep(sec); end = time.strftime("%H:%M:%S")
+body = f"<!DOCTYPE html><meta charset='utf-8'><link rel='stylesheet' href='/css/style.css'><main><h2>{sec}초 걸린 응답</h2><p>{start} → {end}</p><p>이 동안 다른 요청도 모두 멈췄다면 서버가 블로킹으로 CGI를 처리하는 것이다.</p><p><a href='/'>홈으로</a></p></main>".encode()
+print("Content-Type: text/html; charset=utf-8\r\nContent-Length: %d\r\n\r" % len(body), flush=True)
+os.write(1, body)
