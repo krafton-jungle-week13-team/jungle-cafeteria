@@ -1,0 +1,195 @@
+#!/usr/bin/env python3
+# 식키타카: 오늘 식사에 대한 한마디를 남기고 보는 CGI
+#   GET  /cgi-bin/talk               → 전체 글 (날짜별로 묶어서)
+#   GET  /cgi-bin/talk?meal=lunch    → 점심 글만   (쿼리는 QUERY_STRING 환경변수로 들어옴)
+#   GET  /cgi-bin/talk?meal=dinner   → 저녁 글만
+#   POST /cgi-bin/talk               → 글 저장 후 전체 글 (body는 stdin, 길이는 CONTENT_LENGTH)
+# 상태 줄(HTTP/1.0 200 OK)은 tiny가 먼저 보내므로, 여기서는 헤더 나머지와 본문만 출력한다.
+
+import html
+import json
+import os
+import re
+import sys
+from datetime import datetime
+from pathlib import Path
+from urllib.parse import parse_qs
+
+# 데이터는 웹 루트(web/) 밖에 저장: w13-jungle-cafeteria/data/talk.txt
+DATA = Path(__file__).resolve().parents[2] / "data" / "talk.txt"
+MEALS = {"lunch": "점심", "dinner": "저녁"}
+DAYS = "월화수목금토일"          # datetime.weekday(): 월=0 … 일=6
+LIMIT = 100                      # 화면에 보여 줄 최대 글 수
+
+
+# ---------- 요청 읽기 ----------
+
+def read_query():
+    """GET 쿼리: /cgi-bin/talk?meal=lunch → QUERY_STRING='meal=lunch'"""
+    q = parse_qs(os.environ.get("QUERY_STRING", ""))
+    meal = q.get("meal", [""])[0]
+    return meal if meal in MEALS else ""          # 모르는 값이면 전체
+
+
+def read_body():
+    """POST body는 stdin으로, 길이는 CONTENT_LENGTH로 전달된다."""
+    try:
+        length = int(os.environ.get("CONTENT_LENGTH", "0"))
+    except ValueError:
+        return {}
+    raw = sys.stdin.buffer.read(length).decode("utf-8", errors="replace")
+    return parse_qs(raw)
+
+
+# ---------- 저장 / 불러오기 ----------
+
+def save(form):
+    name = form.get("name", [""])[0].strip()[:20] or "익명"
+    meal = form.get("meal", ["lunch"])[0]
+    text = form.get("text", [""])[0].strip()[:300]
+    date = form.get("date", [""])[0]                   # 페이지(JS)가 정한 "오늘"
+    if meal not in MEALS:
+        meal = "lunch"
+    if not text:
+        return "한마디를 입력해 주세요."
+
+    now = datetime.now()
+    entry = {"date": now.strftime("%Y-%m-%d"),     # 서버의 실제 날짜
+         "time": now.strftime("%H:%M"),
+         "name": name, "meal": meal, "text": text}
+    
+    # 브라우저가 보낸 값은 믿지 않고 형식을 검사한다. 이상하면 서버의 실제 날짜를 쓴다
+    if not re.fullmatch(r"\d{4}-\d{2}-\d{2}", date):
+        date = now.strftime("%Y-%m-%d")
+    entry = {"date": date,                             # 식단 데이터와 같은 날짜 형식
+             "time": now.strftime("%H:%M"),
+             "name": name, "meal": meal, "text": text}
+    DATA.parent.mkdir(exist_ok=True)
+    with DATA.open("a", encoding="utf-8") as f:
+        f.write(json.dumps(entry, ensure_ascii=False) + "\n")
+    return "등록됐어요!"
+
+
+def load(meal_filter):
+    """talk.txt 전체를 읽어 최신순으로. 필터가 있으면 그 끼니만."""
+    if not DATA.exists():
+        return []
+    entries = []
+    for line in DATA.read_text(encoding="utf-8").splitlines():
+        try:
+            e = json.loads(line)
+        except json.JSONDecodeError:
+            continue                                  # 깨진 줄은 건너뜀
+        if "date" not in e:
+            continue                                  # 예전 형식은 건너뜀
+        if meal_filter and e.get("meal") != meal_filter:
+            continue
+        entries.append(e)
+    entries.reverse()                                 # 파일 끝(최신)이 위로
+    return entries[:LIMIT]
+
+
+def group_by_date(entries):
+    """[(날짜, [글, 글…]), …] — 이미 최신순이라 순서대로 묶기만 하면 된다."""
+    groups = []
+    for e in entries:
+        if not groups or groups[-1][0] != e["date"]:
+            groups.append((e["date"], []))
+        groups[-1][1].append(e)
+    return groups
+
+
+# ---------- HTML ----------
+
+def date_label(date_str):
+    d = datetime.strptime(date_str, "%Y-%m-%d")
+    return f"{d.month}/{d.day} ({DAYS[d.weekday()]})"
+
+
+def render(entries, meal_filter, notice):
+    esc = html.escape            # <, >, &, " 를 바꿔서 출력 (스크립트 삽입 방지)
+
+    # 필터 탭
+    tabs = [("", "전체"), ("lunch", "점심"), ("dinner", "저녁")]
+    tab_html = "".join(
+        f'<a class="tab{" active" if key == meal_filter else ""}" '
+        f'href="/cgi-bin/talk{"?meal=" + key if key else ""}">{label}</a>'
+        for key, label in tabs
+    )
+
+    # 날짜별 글 목록
+    blocks = []
+    for date, items in group_by_date(entries):
+        lis = "".join(
+            f'<li class="talk-item {e["meal"]}">'
+            f'<div class="talk-meta"><b>{esc(e["name"])}</b>'
+            f'<span class="tag">{MEALS.get(e["meal"], "")}</span>{esc(e["time"])}</div>'
+            f'<div class="talk-text">{esc(e["text"])}</div></li>'
+            for e in items
+        )
+        blocks.append(
+            f'<div class="day-divider"><span>{date_label(date)}</span>'
+            f'<small>{len(items)}개</small></div>'
+            f'<ul class="talk-list">{lis}</ul>'
+        )
+    list_html = "".join(blocks) or '<p class="talk-empty">아직 글이 없어요. 첫 한마디를 남겨 주세요!</p>'
+
+    notice_html = f'<p class="notice">{esc(notice)}</p>' if notice else ""
+    lunch_checked = "checked" if datetime.now().hour < 15 else ""
+    dinner_checked = "" if lunch_checked else "checked"
+
+    return f"""<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>식키타카 · 정글 식당</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <header>
+    <h1>정글 식당</h1>
+    <nav><a href="/">홈</a> <a href="/cgi-bin/talk">식키타카</a></nav>
+  </header>
+  <main>
+    <h2>식키타카 <small>오늘 식사 어땠어요?</small></h2>
+    {notice_html}
+    <section id="today-menu" class="today-menu">오늘의 메뉴를 불러오는 중…</section>
+    <form class="talk-form" method="POST" action="/cgi-bin/talk">
+      <div class="talk-row">
+        <input name="name" maxlength="20" placeholder="이름 (비우면 익명)">
+        <label><input type="radio" name="meal" value="lunch" {lunch_checked}> 점심</label>
+        <label><input type="radio" name="meal" value="dinner" {dinner_checked}> 저녁</label>
+      </div>
+      <textarea name="text" maxlength="300" placeholder="예) 오늘 철판삼겹살 대박이었어요" required></textarea>
+      <button type="submit">남기기</button>
+    </form>
+
+    <div class="tabs">{tab_html}</div>
+    {list_html}
+  </main>
+  <script src="/js/talk.js"></script>
+  <script>
+    // POST 결과 화면에서 새로고침해도 글이 또 등록되지 않게 주소를 GET용으로 바꿔 둔다
+    if (history.replaceState && location.search === '') history.replaceState(null, '', '/cgi-bin/talk' + location.hash);  </script>
+</body>
+</html>"""
+
+
+def main():
+    notice = ""
+    meal_filter = read_query()
+    if os.environ.get("REQUEST_METHOD") == "POST":
+        notice = save(read_body())
+        meal_filter = ""                              # 글을 쓴 뒤에는 전체 목록
+    body = render(load(meal_filter), meal_filter, notice).encode("utf-8")
+
+    out = sys.stdout.buffer
+    out.write(b"Connection: close\r\n")
+    out.write(b"Content-Type: text/html; charset=utf-8\r\n")
+    out.write(f"Content-Length: {len(body)}\r\n\r\n".encode())
+    out.write(body)
+    out.flush()
+
+
+main()
