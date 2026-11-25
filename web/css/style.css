@@ -1,0 +1,136 @@
+/* 정글 식당 스타일: 정글 주간메뉴표 이미지에서 뽑은 색 */
+:root {
+  --jungle-green: #00d37a;   /* 배경 초록 */
+  --green-dark:   #00a862;   /* 링크 hover, 강조 테두리 */
+  --card:         #ffffff;   /* 흰 카드 */
+  --cell-gray:    #f2f2f2;   /* 표 머리글, 구분 칸 */
+  --line:         #a6a6a6;   /* 표 바깥 테두리 */
+  --line-light:   #d0d0d0;   /* 표 안쪽 선 */
+  --text:         #404040;   /* 본문 글자 */
+  --heading:      #383838;   /* 제목 */
+  --muted:        #888888;   /* 보조 글자 */
+  --main-dish:    #c62828;   /* 메인 메뉴 빨강 */
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  font-family: -apple-system, "Apple SD Gothic Neo", "Noto Sans KR", "Malgun Gothic", sans-serif;
+  color: var(--text);
+  background: var(--jungle-green);
+  line-height: 1.6;
+}
+
+/* 상단: 초록 바탕에 흰 글자 */
+header {
+  display: flex; align-items: center; justify-content: space-between;
+  max-width: 960px; margin: 0 auto; padding: 20px 24px 12px;
+  color: #fff;
+}
+header h1 { margin: 0; font-size: 1.8rem; font-weight: 800; letter-spacing: -0.5px; }
+nav a {
+  color: #fff; text-decoration: none; font-weight: 600;
+  margin-left: 8px; padding: 6px 14px; border-radius: 999px;
+}
+nav a:hover { background: rgba(255, 255, 255, .2); }
+
+/* 본문: 둥근 흰 카드 */
+main {
+  max-width: 960px; margin: 0 auto 40px; padding: 32px 40px;
+  background: var(--card); border-radius: 40px;
+}
+main h2 {
+  margin-top: 0; text-align: center;
+  font-size: 1.9rem; font-weight: 800; color: var(--heading);
+}
+main h2 small { font-size: 1rem; font-weight: 600; color: var(--muted); margin-left: 6px; }
+
+img { max-width: 100%; border-radius: 12px; }
+
+.hint { text-align: center; color: var(--muted); font-size: .9rem; margin-top: -8px; }
+
+/* 오늘의 식사 (홈) */
+#today { text-align: center; font-size: 1.2rem; font-weight: 700; color: var(--heading); }
+.meals { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+.meals figure {
+  margin: 0; background: var(--card); border: 1px solid var(--line-light);
+  border-radius: 16px; overflow: hidden; opacity: .55; transition: opacity .2s;
+}
+.meals figure.now { opacity: 1; border: 3px solid var(--jungle-green); }
+.meals img { display: block; width: 100%; aspect-ratio: 4 / 3; object-fit: cover; border-radius: 0; }
+.meals figcaption { padding: 10px 14px; font-weight: 700; color: var(--heading); background: var(--cell-gray); }
+
+/* 식단표: 회색 머리글 + 가는 회색 선 */
+table { width: 100%; border-collapse: collapse; border: 1px solid var(--line); }
+th, td { border: 1px solid var(--line-light); padding: 10px 8px; text-align: center; }
+thead th { background: var(--cell-gray); color: var(--heading); font-weight: 600; }
+
+.menu-table th, .menu-table td { vertical-align: middle; }
+.menu-table tbody th { white-space: nowrap; background: var(--cell-gray); font-weight: 600; color: var(--heading); }
+.menu-table td div { line-height: 1.5; }
+.menu-table .main-dish { font-weight: 700; color: var(--main-dish); margin-bottom: 2px; }
+.menu-table tr.today { outline: 3px solid var(--jungle-green); outline-offset: -2px; }
+.menu-table tr.today th { background: var(--jungle-green); color: #fff; }
+.menu-table tr.today th::after { content: "\A오늘"; white-space: pre; font-size: .8rem; }
+
+@media (max-width: 640px) {
+  main { padding: 20px 16px; border-radius: 24px; }
+  .meals { grid-template-columns: 1fr; }
+}
+
+/* 식키타카 */
+.notice { text-align: center; background: #e6faf1; color: var(--green-dark); border-radius: 8px; padding: 8px; font-weight: 600; }
+.talk-form { display: grid; gap: 10px; background: var(--cell-gray); padding: 16px; border-radius: 16px; }
+.talk-row { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
+.talk-form input[name=name] { flex: 1; min-width: 160px; }
+.talk-form input[name=name], .talk-form textarea {
+  font: inherit; padding: 10px; border: 1px solid var(--line-light); border-radius: 8px; background: #fff;
+}
+.talk-form textarea { min-height: 80px; resize: vertical; }
+.talk-form button {
+  justify-self: end; font: inherit; font-weight: 700; color: #fff; background: var(--jungle-green);
+  border: 0; border-radius: 999px; padding: 8px 22px; cursor: pointer;
+}
+.talk-form button:hover { background: var(--green-dark); }
+.talk-list { list-style: none; padding: 0; margin: 20px 0 0; display: grid; gap: 12px; }
+.talk-item { background: var(--cell-gray); border-radius: 4px 16px 16px 16px; padding: 10px 14px; max-width: 80%; }
+.talk-item.dinner { justify-self: end; border-radius: 16px 4px 16px 16px; background: #e6faf1; }
+.talk-meta { font-size: .85rem; color: var(--muted); }
+.talk-meta b { color: var(--heading); margin-right: 6px; }
+.tag { font-size: .75rem; font-weight: 700; color: #fff; background: var(--jungle-green); border-radius: 999px; padding: 1px 8px; margin-right: 6px; }
+.talk-item.lunch .tag { background: var(--main-dish); }
+.talk-text { white-space: pre-wrap; color: var(--text); margin-top: 2px; }
+.talk-empty { text-align: center; color: var(--muted); }
+
+/* 홈: 사진 아래 오늘 메뉴 */
+.meal-items { padding: 10px 14px 14px; display: flex; flex-wrap: wrap; gap: 4px 10px; color: var(--text); }
+.meal-items .main-dish { flex-basis: 100%; font-weight: 700; color: var(--main-dish); }
+.week { margin-top: 40px; }
+
+/* 식키타카: 필터 탭, 날짜 구분선 */
+.tabs { display: flex; gap: 8px; margin: 24px 0 8px; }
+.tab {
+  padding: 6px 16px; border-radius: 999px; text-decoration: none; font-weight: 600;
+  color: var(--text); background: var(--cell-gray);
+}
+.tab:hover { background: var(--line-light); }
+.tab.active { color: #fff; background: var(--jungle-green); }
+.day-divider {
+  display: flex; align-items: center; gap: 10px; margin: 24px 0 4px;
+  color: var(--heading); font-weight: 700;
+}
+.day-divider::after { content: ""; flex: 1; border-top: 1px solid var(--line-light); }
+.day-divider small { color: var(--muted); font-weight: 400; }
+.day-divider + .talk-list { margin-top: 8px; }
+
+/* 식키타카: 오늘의 메뉴 요약 */
+.today-menu {
+  border: 2px solid var(--jungle-green); border-radius: 16px;
+  padding: 12px 16px; margin-bottom: 16px; display: grid; gap: 6px;
+}
+.today-menu-title { font-weight: 800; color: var(--heading); }
+.today-menu b { margin-right: 8px; color: var(--heading); }
+.today-menu .rest { color: var(--muted); font-size: .9rem; }
+.tag.lunch { background: var(--main-dish); }
+.tag.dinner { background: var(--jungle-green); }

@@ -1,0 +1,51 @@
+
+
+
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>정글 식당</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <header>
+    <h1>정글 식당</h1>
+    <nav><a href="/">홈</a> <a href="/cgi-bin/talk">식키타카</a></nav>
+  </header>
+ 
+  <main>
+    <!-- 오늘의 식사: 사진은 정적 서빙, 메뉴 이름은 /api/menu.txt (리버스 프록시) -->
+    <section>
+      <h2 id="today-title">오늘의 식사</h2>
+      <div class="meals">
+        <figure id="lunch">
+          <img alt="오늘의 점심">
+          <figcaption>점심 · 12:00 – 13:00</figcaption>
+          <div class="meal-items">메뉴를 불러오는 중…</div>
+        </figure>
+        <figure id="dinner">
+          <img alt="오늘의 저녁">
+          <figcaption>저녁 · 18:00 – 19:00</figcaption>
+          <div class="meal-items">메뉴를 불러오는 중…</div>
+        </figure>
+      </div>
+    </section>
+ 
+    <!-- 이번 주 식단표: /api/menu.txt (리버스 프록시) -->
+    <section class="week">
+      <h2>이번 주 식단 <small>A코너</small></h2>
+      <table class="menu-table">
+        <thead><tr><th>날짜</th><th>점심</th><th>저녁</th></tr></thead>
+        <tbody id="menu-body">
+          <tr><td colspan="3">식단을 불러오는 중…</td></tr>
+        </tbody>
+      </table>
+    </section>
+  </main>
+ 
+  <script src="/js/home.js"></script>
+</body>
+</html>
+ 
